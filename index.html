@@ -82,8 +82,9 @@
                     </div>
 
                     <!-- Botón de Carga (XLS/XLSX - Color SOLICITADO: #27CCF5) -->
+                    <!-- MODIFICADO: Llama a showUploadTypeModal() en lugar de al input -->
                     <input type="file" id="file-input" accept=".xlsx, .xls, .xlsm, .xlsb, .ods" class="hidden" onchange="window.handleFileUpload(event)">
-                    <button onclick="document.getElementById('file-input').click()"
+                    <button onclick="window.showUploadTypeModal()"
                             id="upload-button"
                             class="p-3 bg-[#27CCF5] text-white rounded-xl font-semibold hover:bg-[#00B4D8] transition duration-150 shadow-md text-sm whitespace-nowrap min-w-[5rem]">
                         Cargar Lista
@@ -216,10 +217,29 @@
 
     </div>
     
-    <!-- Modal de Confirmación para Carga de Datos -->
+    <!-- NUEVO: Modal de Tipo de Carga -->
+    <div id="upload-type-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-11/12 max-w-sm">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Tipo de Carga</h3>
+            <p class="text-gray-700 mb-6">¿Qué tipo de lista desea cargar?</p>
+            <div class="space-y-3">
+                <button onclick="window.selectUploadMode('full')" class="w-full p-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition font-semibold">
+                    1. Carga Completa (IN HOUSE)
+                </button>
+                <button onclick="window.selectUploadMode('append')" class="w-full p-3 text-white bg-green-600 rounded-lg hover:bg-green-700 transition font-semibold">
+                    2. Añadir Nuevas Llegadas
+                </button>
+                <button onclick="window.closeUploadTypeModal()" class="w-full p-2 text-gray-600 text-sm hover:text-gray-800 transition">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Confirmación para Carga de Datos (Completa) -->
     <div id="upload-confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-11/12 max-w-sm">
-            <h3 class="text-xl font-bold text-red-600 mb-4">Confirmar Carga de Lista</h3>
+            <h3 class="text-xl font-bold text-red-600 mb-4">Confirmar Carga Completa</h3>
             <p class="text-gray-700 mb-6">
                 **ATENCIÓN**: Al cargar esta nueva lista de <span id="modal-guest-count" class="font-bold">0</span> huéspedes, se **archivará el registro actual** y se **borrará toda la lista**. ¿Desea continuar?
             </p>
@@ -304,8 +324,10 @@
         let dailyChartInstance = null; // Instancia de Chart.js para evitar duplicados
         
         // NUEVO: Almacenamiento local del estado de alerta
-        // Usaremos un Map para guardar el guestId y su estado (true si está en alerta, false si no)
         let alertState = new Map();
+        
+        // NUEVO: Modo de carga ('full' o 'append')
+        let currentUploadMode = 'full';
 
         // --- FUNCIONES GLOBALES DE UTILIDAD ---
         
@@ -468,7 +490,7 @@
             const guestRef = getGuestsCollectionRef();
             if (!guestRef) return;
             
-            window.showNotification("Borrando lista anterior...", 'error');
+            // window.showNotification("Borrando lista anterior...", 'error'); // Silenciado para flujo de carga
             const snapshot = await getDocs(guestRef);
             
             const deletePromises = [];
@@ -503,7 +525,7 @@
         }
 
 
-        /** Inicializa la base de datos con los datos proporcionados. */
+        /** Inicializa la base de datos con los datos proporcionados (CARGA COMPLETA). */
         async function initializeGuestData(guestDataArray) {
             const uploadButton = document.getElementById('upload-button');
             uploadButton.disabled = true;
@@ -526,7 +548,7 @@
                 const batchPromises = guestDataArray.slice(i, i + batchSize).map(guest => {
                     const docToCreate = doc(guestRef);
                     return setDoc(docToCreate, {
-                        ...guest,
+                        ...guest, // Contiene isNewArrival: false desde el parser
                         createdAt: serverTimestamp(),
                         id: docToCreate.id 
                     });
@@ -535,8 +557,48 @@
             }
             
             uploadButton.disabled = false;
-            uploadButton.textContent = "Cargar Lista (XLS/XLSX)";
+            uploadButton.textContent = "Cargar Lista";
             window.showNotification("Lista de huéspedes actualizada y registro guardado.", 'success');
+        }
+        
+        /** AÑADE huéspedes a la base de datos sin borrar (CARGA PARCIAL). */
+        async function appendGuestData(guestDataArray) {
+            const uploadButton = document.getElementById('upload-button');
+            uploadButton.disabled = true;
+            uploadButton.textContent = "Añadiendo...";
+            
+            const guestRef = getGuestsCollectionRef();
+            if (!guestRef) return;
+            
+            // Creamos un mapa de las reservas existentes para evitar duplicados
+            const existingReservations = new Set(allGuests.map(g => g.reservationCode));
+            let newGuestsAdded = 0;
+            
+            const batchPromises = [];
+
+            guestDataArray.forEach(guest => {
+                // Solo añade si el código de reserva NO existe ya en la lista
+                if (!existingReservations.has(guest.reservationCode)) {
+                    const docToCreate = doc(guestRef);
+                    batchPromises.push(setDoc(docToCreate, {
+                        ...guest, // Contiene isNewArrival: false desde el parser
+                        isNewArrival: true, // ¡SOBREESCRIBIMOS A TRUE!
+                        createdAt: serverTimestamp(), // Se usa el timestamp actual para el sello
+                        id: docToCreate.id 
+                    }));
+                    newGuestsAdded++;
+                }
+            });
+            
+            if (batchPromises.length > 0) {
+                 await Promise.all(batchPromises);
+                 window.showNotification(`${newGuestsAdded} huéspedes nuevos añadidos.`, 'success');
+            } else {
+                 window.showNotification("No se encontraron huéspedes nuevos para añadir (ya existían).", 'warning');
+            }
+            
+            uploadButton.disabled = false;
+            uploadButton.textContent = "Cargar Lista";
         }
 
 
@@ -859,8 +921,16 @@
                     if(lastUpdatedDisplay) {
                         // Buscamos el 'createdAt' (debería ser el mismo para todos los de la carga)
                         if (allGuests[0] && allGuests[0].createdAt) {
-                            const lastUploadDate = allGuests[0].createdAt.toDate();
-                            const formattedDate = lastUploadDate.toLocaleDateString('es-ES') + ' ' + lastUploadDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                            // Encontramos el registro más reciente (el último 'createdAt')
+                            // Asumimos que la lista está desordenada, así que buscamos el más reciente.
+                            const latestTimestamp = allGuests.reduce((latest, guest) => {
+                                if (guest.createdAt && guest.createdAt.toDate() > latest) {
+                                    return guest.createdAt.toDate();
+                                }
+                                return latest;
+                            }, new Date(0));
+
+                            const formattedDate = latestTimestamp.toLocaleDateString('es-ES') + ' ' + latestTimestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
                             lastUpdatedDisplay.textContent = `Lista cargada: ${formattedDate}`;
                         } else {
                             lastUpdatedDisplay.textContent = "Lista cargada (fecha no disp.)"; 
@@ -1053,7 +1123,8 @@
                             name: toTitleCase(cleanName), // Aplicamos formato
                             room: cleanRoom,
                             // checkout: cleanCheckout, // ELIMINADO
-                            isChecked: false 
+                            isChecked: false,
+                            isNewArrival: false // [DEFAULT] Se establece en false.
                         });
                     }
                 }
@@ -1089,7 +1160,15 @@
                 }
                 
                 parsedGuestData = data;
-                window.showConfirmModal(data.length);
+                
+                // LÓGICA DE CARGA: Si el modo es "full", mostramos el modal de borrado.
+                // Si el modo es "append", añadimos directamente.
+                if (currentUploadMode === 'full') {
+                    window.showConfirmModal(data.length);
+                } else {
+                    appendGuestData(parsedGuestData);
+                    parsedGuestData = []; // Limpiar
+                }
             };
             
             // Leemos el archivo como un ArrayBuffer, necesario para SheetJS
@@ -1119,6 +1198,24 @@
         window.closeConfirmModal = function() {
             modal.classList.add('hidden');
         }
+        
+        // --- LÓGICA DE MODAL DE TIPO DE CARGA ---
+        const uploadTypeModal = document.getElementById('upload-type-modal');
+        
+        window.showUploadTypeModal = function() {
+            uploadTypeModal.classList.remove('hidden');
+        }
+        
+        window.closeUploadTypeModal = function() {
+            uploadTypeModal.classList.add('hidden');
+        }
+        
+        window.selectUploadMode = function(mode) {
+            currentUploadMode = mode; // 'full' o 'append'
+            closeUploadTypeModal();
+            document.getElementById('file-input').click(); // Abrir selector de archivos
+        }
+
 
         // --- LÓGICA DE RENDERIZADO (MANTENIDO) ---
 
@@ -1173,6 +1270,9 @@
                 let nameClasses = "text-lg font-bold truncate";
                 let statusClasses = "text-xs mt-1 uppercase";
                 let iconHtml;
+                
+                // Lógica de Texto de Estado (PENDIENTE/INGRESADO/ALERTA)
+                let statusTextContent = '';
 
                 if (isAlert) {
                     cardClasses += " guest-card-alert"; // Usa el nuevo estilo naranja
@@ -1180,18 +1280,26 @@
                     nameClasses += " text-orange-700";
                     statusClasses += " text-orange-600 font-bold";
                     iconHtml = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`; // Icono de alerta
+                    statusTextContent = 'CONFIRMAR EGRESO';
                 } else if (checked) {
                     cardClasses += " guest-card-checked";
                     checkButtonClasses += " bg-green-500 hover:bg-green-600";
                     nameClasses += " text-green-700";
                     statusClasses += " text-green-500 font-bold";
                     iconHtml = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>`;
+                    statusTextContent = 'INGRESADO';
                 } else {
                     cardClasses += " guest-card-unchecked";
                     checkButtonClasses += " bg-gray-200 hover:bg-gray-300";
                     nameClasses += " text-gray-900";
                     statusClasses += " text-red-500 font-semibold";
                     iconHtml = `<svg class="h-6 w-6 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>`;
+                    
+                    // --- ¡NUEVA LÓGICA DE LEYENDA! ---
+                    statusTextContent = 'PENDIENTE DE INGRESO';
+                    if (guest.isNewArrival) {
+                        statusTextContent += ` <span style="color: #E84425;" class="font-bold ml-1">Check IN</span>`;
+                    }
                 }
 
 
@@ -1209,7 +1317,7 @@
                                 </span>
                             </div>
                             <p class="${statusClasses}">
-                                ${isAlert ? 'CONFIRMAR EGRESO' : (checked ? 'INGRESADO' : 'PENDIENTE DE INGRESO')}
+                                ${statusTextContent}
                             </p>
                         </div>
                         
@@ -1228,4 +1336,3 @@
 
     </script>
 </body>
-</html>
