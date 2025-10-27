@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Ingreso a Piscina</title>
-    <!-- Carga de Tailwind CSS para estilos --><script src="https://cdn.tailwindcss.com"></script>
-    <!-- Carga de la librería SheetJS (xlsx) para leer archivos de Excel --><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Carga de Chart.js para gráficos --><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-    <!-- Fuente Inter --><style>
+    <!-- Carga de Tailwind CSS para estilos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carga de la librería SheetJS (xlsx) para leer archivos de Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Carga de Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <!-- Fuente Inter -->
+    <style>
         body { font-family: 'Inter', sans-serif; background-color: #FAFAFA; } /* Fondo blanco para contraste */
         /* Nuevo Degradado Caribeño: de Amarillo Suave a Azul Profundo */
         .header-bg { 
@@ -39,22 +43,36 @@
 
     <div id="app" class="min-h-screen bg-gray-50 flex flex-col items-center">
         
-        <!-- Encabezado Fijo y Controles (Estilo Caribeño/Acuático) --><header class="w-full header-bg p-4 sticky top-0 z-10">
+        <!-- Encabezado Fijo y Controles (Estilo Caribeño/Acuático) -->
+        <header class="w-full header-bg p-4 sticky top-0 z-10">
             
-            <!-- Contenedor del Título y Logo --><!-- LOGO: Oculto en móvil, visible en tabletas (sm:block) para evitar superposición. --><div class="relative flex items-center justify-center pt-2 mb-4"> <!-- MARGEN AJUSTADO A mb-4 --><!-- [INICIO] COLOCAR LOGO AQUÍ --><!-- RUTA FINAL Y CORREGIDA: 'logo1.png' --><img id="hotel-logo" 
+            <!-- Contenedor del Título y Logo -->
+            <!-- LOGO: Oculto en móvil, visible en tabletas (sm:block) para evitar superposición. -->
+            <div class="relative flex items-center justify-center pt-2 mb-4"> <!-- MARGEN AJUSTADO A mb-4 -->
+                
+                <!-- [INICIO] COLOCAR LOGO AQUÍ -->
+                <!-- RUTA FINAL Y CORREGIDA: 'logo1.png' -->
+                <img id="hotel-logo" 
                      src="logo1.png" 
                      alt="Logo del Hotel" 
                      onerror="this.style.display='none'"
                      class="absolute left-0 h-10 w-auto object-contain rounded-lg hidden sm:block"
                 >
-                <!-- [FIN] COLOCAR LOGO AQUÍ --><!-- Título Centrado --><h1 class="text-xl font-extrabold text-white text-center">Control de Ingreso a Piscina</h1>
+                <!-- [FIN] COLOCAR LOGO AQUÍ -->
+                
+                <!-- Título Centrado -->
+                <h1 class="text-xl font-extrabold text-white text-center">Control de Ingreso a Piscina</h1>
             </div>
 
-            <!-- Controles Flotantes sobre el Header Background --><!-- POSICIÓN AJUSTADA A top-14 --><div class="absolute w-full max-w-xl left-1/2 transform -translate-x-1/2 top-14 px-4">
+            <!-- Controles Flotantes sobre el Header Background -->
+            <!-- POSICIÓN AJUSTADA A top-14 -->
+            <div class="absolute w-full max-w-xl left-1/2 transform -translate-x-1/2 top-14 px-4">
                 
-                <!-- 1. BUSCADOR Y BOTONES (FILA PRINCIPAL DE CONTROLES) --><div class="flex items-center space-x-2 w-full">
+                <!-- 1. BUSCADOR Y BOTONES (FILA PRINCIPAL DE CONTROLES) -->
+                <div class="flex items-center space-x-2 w-full">
                     
-                    <!-- Barra de Búsqueda (Flex-grow para ocupar el espacio principal) --><div class="relative flex-grow">
+                    <!-- Barra de Búsqueda (Flex-grow para ocupar el espacio principal) -->
+                    <div class="relative flex-grow">
                         <input type="text" id="search-input" placeholder="Buscar por Nombre o Habitación..." 
                                class="w-full p-3 pl-10 border-2 border-white rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-800 shadow-inner"
                                oninput="window.searchGuests(this.value)">
@@ -63,7 +81,8 @@
                         </svg>
                     </div>
 
-                    <!-- Botón de Carga (XLS/XLSX - Color SOLICITADO: #27CCF5) --><input type="file" id="file-input" accept=".xlsx, .xls" class="hidden" onchange="window.handleFileUpload(event)">
+                    <!-- Botón de Carga (XLS/XLSX - Color SOLICITADO: #27CCF5) -->
+                    <input type="file" id="file-input" accept=".xlsx, .xls, .xlsm, .xlsb, .ods" class="hidden" onchange="window.handleFileUpload(event)">
                     <button onclick="document.getElementById('file-input').click()"
                             id="upload-button"
                             class="p-3 bg-[#27CCF5] text-white rounded-xl font-semibold hover:bg-[#00B4D8] transition duration-150 shadow-md text-sm whitespace-nowrap min-w-[5rem]">
@@ -71,35 +90,42 @@
                     </button>
                 </div>
 
-                <!-- 2. CONTADORES Y ORDENAMIENTO (FILA SECUNDARIA) --><div class="flex items-center mt-3 space-x-2">
+                <!-- 2. CONTADORES Y ORDENAMIENTO (FILA SECUNDARIA) -->
+                <div class="flex items-center mt-3 space-x-2">
 
-                    <!-- Contadores (Fondo blanco sólido - Ocupa la mayor parte del espacio) --><div id="counter-card" class="text-sm p-3 rounded-xl shadow-xl bg-white border border-gray-200 flex-grow">
+                    <!-- Contadores (Fondo blanco sólido - Ocupa la mayor parte del espacio) -->
+                    <div id="counter-card" class="text-sm p-3 rounded-xl shadow-xl bg-white border border-gray-200 flex-grow">
                         <div class="flex justify-between items-center text-gray-700">
                             <span id="guest-count" class="font-medium text-base">Total de Huéspedes: 0</span>
                             
-                            <!-- Botones de Navegación Antiguos (Eliminados de aquí) --><div class="flex space-x-2 hidden"></div>
+                            <!-- Botones de Navegación Antiguos (Eliminados de aquí) -->
+                            <div class="flex space-x-2 hidden"></div>
                         </div>
                         <div class="mt-1 text-xl font-bold text-green-700"> 
                             <span id="entered-count">Ingresados: 0</span>
                         </div>
                         
-                        <!-- TAREA A: SELLO DE ÚLTIMA ACTUALIZACIÓN --><div class="mt-2 pt-2 border-t border-gray-100">
+                        <!-- TAREA A: SELLO DE ÚLTIMA ACTUALIZACIÓN -->
+                        <div class="mt-2 pt-2 border-t border-gray-100">
                             <span id="last-updated" class="text-xs text-gray-500">Cargando...</span>
                         </div>
                     </div>
 
-                    <!-- Menú Desplegable de Ordenamiento (Ancho ajustado) --><div id="sort-controls" class="w-28 min-w-[7rem]"> 
+                    <!-- Menú Desplegable de Ordenamiento (Ancho ajustado) -->
+                    <div id="sort-controls" class="w-28 min-w-[7rem]"> 
                         <label for="sort-by" class="text-xs font-semibold text-white sr-only">Ordenar por:</label>
                         <select id="sort-by" onchange="window.sortGuests(this.value)" 
                                 class="w-full p-3 text-sm rounded-xl border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 font-medium truncate">
                             <option value="name">Ordenar...</option> 
                             <option value="name">Nombre</option>
                             <option value="room">Habitación</option>
-                            <option value="checked">Ingreso</option> <!-- NUEVA OPCIÓN --></select>
+                            <option value="checked">Ingreso</option> <!-- NUEVA OPCIÓN -->
+                        </select>
                     </div>
                 </div>
 
-                <!-- 3. NUEVA FILA DE NAVEGACIÓN (Debajo del contador) --><div class="flex justify-between items-center mt-2 space-x-2 w-full">
+                <!-- 3. NUEVA FILA DE NAVEGACIÓN (Debajo del contador) -->
+                <div class="flex justify-between items-center mt-2 space-x-2 w-full">
                     <button onclick="window.showHistoryView()" 
                             class="w-1/2 p-2 bg-blue-500 text-white rounded-xl font-semibold hover:bg-blue-600 transition shadow-md text-sm flex items-center justify-center">
                         <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c1.657 0 3 .895 3 2s-1.343 2-3 2-3-.895-3-2 1.343-2 3-2zM21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.176A9.902 9.902 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
@@ -116,7 +142,9 @@
             
         </header>
 
-        <!-- Contenedor del Checklist (AJUSTE CRÍTICO DEL MARGEN) --><!-- MARGEN AJUSTADO A mt-[9rem] --><main id="list-view-container" class="w-full max-w-xl p-4 space-y-3 pb-20 mt-[9rem]"> 
+        <!-- Contenedor del Checklist (AJUSTE CRÍTICO DEL MARGEN) -->
+        <!-- MARGEN AJUSTADO A mt-[9rem] -->
+        <main id="list-view-container" class="w-full max-w-xl p-4 space-y-3 pb-20 mt-[9rem]"> 
             <div id="loading-message" class="text-center p-8 text-gray-500">
                 <svg class="animate-spin h-5 w-5 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -125,10 +153,12 @@
                 <p class="mt-2">Iniciando base de datos...</p>
             </div>
             <div id="guest-list-container" class="space-y-3">
-                <!-- Lista de huéspedes inyectada aquí --></div>
+                <!-- Lista de huéspedes inyectada aquí -->
+            </div>
         </main>
         
-        <!-- VISTA 2: HISTORIAL DE REGISTROS --><main id="history-view-container" class="w-full max-w-xl p-4 space-y-4 pb-20 mt-[9rem] hidden">
+        <!-- VISTA 2: HISTORIAL DE REGISTROS -->
+        <main id="history-view-container" class="w-full max-w-xl p-4 space-y-4 pb-20 mt-[9rem] hidden">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
                 <button onclick="window.showListView()" class="text-blue-600 font-semibold hover:text-blue-800 transition flex items-center">
                     <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
@@ -137,16 +167,19 @@
                 <h2 class="text-xl font-bold text-gray-800">Historial Diario</h2>
             </div>
             
-            <!-- Botón de Exportar Historial --><button onclick="window.exportHistoryToCSV()" class="w-full p-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition duration-150 shadow-md flex items-center justify-center">
+            <!-- Botón de Exportar Historial -->
+            <button onclick="window.exportHistoryToCSV()" class="w-full p-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition duration-150 shadow-md flex items-center justify-center">
                 <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Exportar Historial a CSV (Excel)
             </button>
             
             <div id="history-stats-container" class="space-y-3">
-                <!-- Estadísticas históricas cargadas aquí --><p class="text-center text-gray-500">Cargando registros históricos...</p>
+                <!-- Estadísticas históricas cargadas aquí -->
+                <p class="text-center text-gray-500">Cargando registros históricos...</p>
             </div>
             
-            <!-- Botón de Borrado Masivo (Limpieza de Año) --><div class="mt-8 pt-4 border-t border-red-200">
+            <!-- Botón de Borrado Masivo (Limpieza de Año) -->
+            <div class="mt-8 pt-4 border-t border-red-200">
                 <button onclick="window.showDeleteAllModal()" class="w-full p-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition duration-150 shadow-md flex items-center justify-center">
                     <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     Eliminar TODOS los Registros Históricos
@@ -154,7 +187,8 @@
             </div>
         </main>
 
-        <!-- VISTA 3: GRÁFICOS DE ESTADÍSTICAS --><main id="graph-view-container" class="w-full max-w-xl p-4 space-y-4 pb-20 mt-[9rem] hidden">
+        <!-- VISTA 3: GRÁFICOS DE ESTADÍSTICAS -->
+        <main id="graph-view-container" class="w-full max-w-xl p-4 space-y-4 pb-20 mt-[9rem] hidden">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
                 <button onclick="window.showListView()" class="text-blue-600 font-semibold hover:text-blue-800 transition flex items-center">
                     <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
@@ -166,20 +200,24 @@
             <div class="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
                 <p id="chart-status" class="text-center text-sm text-gray-500 mb-4">Gráfico de los últimos 30 días.</p>
                 <div class="relative h-64 w-full">
-                    <!-- Canvas donde Chart.js dibujará el gráfico --><canvas id="daily-chart"></canvas>
+                    <!-- Canvas donde Chart.js dibujará el gráfico -->
+                    <canvas id="daily-chart"></canvas>
                 </div>
             </div>
 
             <div id="chart-message-area">
-                <!-- Mensajes de error o datos insuficientes --></div>
+                <!-- Mensajes de error o datos insuficientes -->
+            </div>
         </main>
         
-        <!-- Mensajes de Notificación (simula alert()) --><div id="notification-area" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20">
+        <!-- Mensajes de Notificación (simula alert()) -->
+        <div id="notification-area" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20">
         </div>
 
     </div>
     
-    <!-- Modal de Confirmación para Carga de Datos --><div id="upload-confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70">
+    <!-- Modal de Confirmación para Carga de Datos -->
+    <div id="upload-confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-11/12 max-w-sm">
             <h3 class="text-xl font-bold text-red-600 mb-4">Confirmar Carga de Lista</h3>
             <p class="text-gray-700 mb-6">
@@ -196,7 +234,8 @@
         </div>
     </div>
     
-    <!-- Modal de Confirmación para Borrado Masivo (Con Contraseña) --><div id="delete-all-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70">
+    <!-- Modal de Confirmación para Borrado Masivo (Con Contraseña) -->
+    <div id="delete-all-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-11/12 max-w-md">
             <h3 class="text-xl font-bold text-red-600 mb-4">¡PELIGRO! Borrado Masivo de Datos</h3>
             <p class="text-gray-700 mb-4">
@@ -222,7 +261,8 @@
     </div>
 
 
-    <!-- Script de Firebase (Módulos) --><script type="module">
+    <!-- Script de Firebase (Módulos) -->
+    <script type="module">
         // Importación de módulos de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -543,7 +583,8 @@
                                         <p class="text-sm font-semibold text-gray-600">Registro guardado:</p>
                                         <p class="text-lg font-bold text-gray-900">${dateStr}</p>
                                     </div>
-                                    <!-- Botón para Borrar Registro Individual --><button onclick="window.showDeleteIndividualModal('${log.id}', '${dateStr}')" 
+                                    <!-- Botón para Borrar Registro Individual -->
+                                    <button onclick="window.showDeleteIndividualModal('${log.id}', '${dateStr}')" 
                                             class="p-1 text-sm text-red-500 hover:text-red-700 transition">
                                         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     </button>
@@ -737,7 +778,7 @@
                     deleteButton.classList.remove('bg-red-300', 'cursor-not-allowed');
                     deleteButton.classList.add('bg-red-600', 'hover:bg-red-700', 'cursor-pointer');
                 } else {
-                    deleteButton.classList.remove('bg-red-300', 'cursor-not-allowed');
+                    deleteButton.classList.remove('bg-red-600', 'hover:bg-red-700', 'cursor-pointer');
                     deleteButton.classList.add('bg-red-300', 'cursor-not-allowed');
                 }
             };
@@ -1032,8 +1073,8 @@
 
             const fileName = file.name.toLowerCase();
 
-            if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
-                window.showNotification("Por favor, suba un archivo Excel (.xlsx o .xls).", 'error');
+            if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls') && !fileName.endsWith('.xlsm') && !fileName.endsWith('.xlsb') && !fileName.endsWith('.ods')) {
+                window.showNotification("Por favor, suba un archivo Excel o de hoja de cálculo válido.", 'error');
                 return;
             }
 
@@ -1160,7 +1201,7 @@
                             <p class="${nameClasses}">
                                 ${guest.name}
                             </p>
-                            <div class="flex items-center text-xs text-gray-500 mt-1">
+                            <!-- ELIMINADA LA SECCIÓN DE CHECK-OUT --><div class="flex items-center text-xs text-gray-500 mt-1">
                                 <span class="text-base font-bold text-gray-700">Hab: <span class="font-extrabold">${guest.room}</span></span>
                                 <span class="font-bold text-gray-400 mx-2">|</span>
                                 <span class="text-xs text-gray-500 truncate">
